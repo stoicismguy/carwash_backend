@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Carwash, Rating
+from .models import Carwash, Rating, Branch
 
 
 class CarwashSerializer(ModelSerializer):
@@ -14,6 +14,20 @@ class CarwashSerializer(ModelSerializer):
         fields =  '__all__'
         extra_kwargs = {
             'user': { 'read_only': True },
+            'rating': { 'read_only': True },
+            'created_at': { 'read_only': True }
+        }
+
+
+class BranchSerializer(ModelSerializer):
+
+    def save(self, **kwargs):
+        kwargs['carwash'] = self.context['carwash']
+        return super().save(**kwargs)
+    class Meta:
+        model = Branch
+        fields =  '__all__'
+        extra_kwargs = {
             'rating': { 'read_only': True },
             'created_at': { 'read_only': True }
         }

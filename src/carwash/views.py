@@ -3,8 +3,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from .serializers import CarwashSerializer, RatingSerializer
-from .models import Carwash, Rating
+from .serializers import CarwashSerializer, RatingSerializer, BranchSerializer
+from .models import Carwash, Rating, Branch
 from settings.permissions import BusinessOnly
 
 
@@ -29,6 +29,14 @@ class CarwashView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
+class CarwashDetailView(APIView):
+    permission_classes = [IsAuthenticated, BusinessOnly]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return super().get_permissions()
+    
     def delete(self, request, pk):
         carwash = get_object_or_404(Carwash, pk=pk)
         if carwash.user != request.user:
@@ -47,7 +55,7 @@ class CarwashView(APIView):
         return Response(serializer.errors, status=400)
     
 
-class CarwashDetailView(APIView):
+class RatingsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
@@ -71,9 +79,59 @@ class CarwashDetailView(APIView):
         return Response(serializer.errors, status=400)
     
 
+class RatingDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return super().get_permissions()
+    
     def delete(self, request, review_id):
         rating = get_object_or_404(Rating, pk=review_id)
         if rating.user != request.user:
             return Response({'error': 'У вас нет доступа для удаления'}, status=403)
         rating.delete()
         return Response({'message': 'Успешно удалено'}, status=200)
+
+
+class BranchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return super().get_permissions()
+    
+    def get(self, request, pk):
+        # TODO: Добавить фильтрацию
+        queryset = Carwash.objects.all()
+        serializer = CarwashSerializer(queryset, many=True)
+        return Response(serializer.data, status=200)
+    
+    def post(self, request, pk):
+        carwash = get_object_or_404(Carwash, pk=pk)
+        if request.user != carwash.user:
+            return Response({'error': 'У вас нет доступа для добавления'}, status=403)
+        serializer = BranchSerializer(data=request.data, context={'carwash':carwash})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
+    
+class BranchDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return super().get_permissions()
+    
+    def delete(self, request, pk):
+        branch = get_object_or_404(Branch, pk=pk)
+        if request.user != branch.carwash.user:
+            return Response({'error': 'У вас нет доступа для удаления'}, status=403)
+        branch.delete()
+        return Response({'message': 'Успешно удалено'}, status=200)
+    
