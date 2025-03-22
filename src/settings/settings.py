@@ -7,9 +7,7 @@ SECRET_KEY = 'django-insecure-6q^u^qmj(#8env$hgsu7@d3%$xzh!&o@lb3hrqz11so+@7n%#=
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
-# Application definition
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,6 +19,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'users', 'carwash'
 ]
 
 MIDDLEWARE = [
@@ -33,7 +32,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'carwash.urls'
+ROOT_URLCONF = 'settings.urls'
 
 TEMPLATES = [
     {
@@ -51,15 +50,16 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'carwash.wsgi.application'
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+WSGI_APPLICATION = 'settings.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'testdb',
+        'USER': 'testuser',
+        'PASSWORD': 'testpass',
+        'HOST': 'localhost',  # или '127.0.0.1', если что
+        'PORT': '5432',
     }
 }
 
@@ -76,8 +76,6 @@ DATABASES = {
 
 # Опционально: настройка времени жизни кэша по умолчанию (в секундах)
 # CACHE_TIMEOUT = 60 * 15
-
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -100,29 +98,23 @@ REST_FRAMEWORK = {
     ),
 }
 
+AUTH_USER_MODEL = 'users.User'
+
+APPEND_SLASH=False
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(hours=24),
 }
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Yekaterinburg'
 
 USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
 STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
