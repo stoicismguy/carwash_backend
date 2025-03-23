@@ -20,10 +20,10 @@ class UserViewSet(ModelViewSet):
     
 
 class UserView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return UserSerializer(request.user).data
+        return Response(UserSerializer(request.user).data)
     
 @api_view(["POST",])
 @permission_classes([AllowAny,])

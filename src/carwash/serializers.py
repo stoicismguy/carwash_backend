@@ -36,13 +36,14 @@ class BranchSerializer(ModelSerializer):
 class RatingSerializer(ModelSerializer):
     def save(self, **kwargs):
         kwargs['user'] = self.context['user']
-        kwargs['carwash'] = self.context['carwash']
+        kwargs['branch'] = self.context['branch']
         return super().save(**kwargs)
     class Meta:
         model = Rating
         fields =  '__all__'
         extra_kwargs = {
             'user': { 'read_only': True },
-            'carwash': { 'read_only': True },
-            'created_at': { 'read_only': True }
+            'branch': { 'read_only': True },
+            'created_at': { 'read_only': True },
+            'description': { 'required': False }
         }

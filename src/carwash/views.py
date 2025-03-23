@@ -9,6 +9,7 @@ from settings.permissions import BusinessOnly
 
 
 class CarwashView(APIView):
+    # TODO: Пофиксить AllowAny для мертвого access токена
     permission_classes = [IsAuthenticated, BusinessOnly]
 
     def get_permissions(self):
@@ -65,16 +66,31 @@ class RatingsView(APIView):
 
     def get(self, request, pk):
         carwash = get_object_or_404(Carwash, pk=pk)
-        ratings = carwash.received_ratings.all()
-        serializer = RatingSerializer(ratings, many=True)
+        branches = Branch.objects.filter(carwash=carwash).prefetch_related('received_ratings')
+        all_ratings = [rating for branch in branches for rating in branch.received_ratings.all()]
+        serializer = RatingSerializer(all_ratings, many=True)
+        return Response(serializer.data, status=200)
+
+
+class RatingBranchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return super().get_permissions()
+    
+    def get(self, request, pk):
+        branch = get_object_or_404(Branch, pk=pk)
+        serializer = RatingSerializer(branch.received_ratings.all(), many=True)
         return Response(serializer.data, status=200)
     
     def post(self, request, pk):
-        carwash = get_object_or_404(Carwash, pk=pk)
-        serializer = RatingSerializer(data=request.data, context={'user':request.user, 'carwash':carwash})
+        # TODO: Добавить обновление рейтинга
+        branch = get_object_or_404(Branch, pk=pk)
+        serializer = RatingSerializer(data=request.data, context={'user':request.user, 'branch':branch})
         if serializer.is_valid():
             serializer.save()
-            carwash.update_rating()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
@@ -105,8 +121,9 @@ class BranchView(APIView):
     
     def get(self, request, pk):
         # TODO: Добавить фильтрацию
-        queryset = Carwash.objects.all()
-        serializer = CarwashSerializer(queryset, many=True)
+        carwash = get_object_or_404(Carwash, pk=pk)
+        branches = Branch.objects.filter(carwash=carwash)
+        serializer = BranchSerializer(branches, many=True)
         return Response(serializer.data, status=200)
     
     def post(self, request, pk):

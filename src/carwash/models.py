@@ -85,6 +85,7 @@ class Branch(models.Model):
 class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_from')
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='received_ratings')
+    description = models.TextField(blank=True, null=True)
     rating_value = models.DecimalField(
         max_digits=2,
         decimal_places=1,
