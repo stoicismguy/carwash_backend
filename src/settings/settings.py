@@ -1,5 +1,11 @@
 from pathlib import Path
 from datetime import timedelta
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -60,10 +66,10 @@ WSGI_APPLICATION = 'settings.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'testdb',
-        'USER': 'testuser',
-        'PASSWORD': 'testpass',
-        'HOST': 'localhost',  # или '127.0.0.1', если что
+        'NAME': str(os.getenv('POSTGRES_DB')),
+        'USER': str(os.getenv('POSTGRES_USER')),
+        'PASSWORD': str(os.getenv('POSTGRES_PASSWORD')),
+        'HOST': str(os.getenv('POSTGRES_HOST')),  # или '127.0.0.1', если что
         'PORT': '5432',
     }
 }

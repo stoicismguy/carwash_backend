@@ -9,9 +9,8 @@ RUN apt-get update && apt-get install -y \
 RUN useradd --user-group -ms /bin/bash app
 
 # Переменные окружения
-ENV PYTHONUNBUFFERED=1 \
-    HOME=/home/app \
-    PUBLIC_DIR=/home/app/public
+ENV PYTHONUNBUFFERED=1 HOME=/home/app
+    # PUBLIC_DIR=/home/app/public
 
 WORKDIR $HOME
 
