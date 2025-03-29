@@ -1,5 +1,6 @@
 from django.db import models
 from users.models import User
+from services.models import Bodytype
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 
 class Carwash(models.Model):
@@ -66,6 +67,7 @@ class Branch(models.Model):
     is_active = models.BooleanField(default=True)
     opening_time = models.TimeField()
     closing_time = models.TimeField()
+    bodytypes = models.ManyToManyField(Bodytype, blank=False, related_name='branch_bodytypes')
     rating = models.DecimalField(
         max_digits=2,
         default=0.0,

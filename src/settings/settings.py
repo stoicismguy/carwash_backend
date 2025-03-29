@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'users', 'carwash'
+    'users', 'carwash', 'services'
 ]
 
 MIDDLEWARE = [
@@ -41,7 +41,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware'
 ]
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://192.168.0.173:5173']
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://192.168.0.171:5173']
+#CORS_ALLOWED_ORIGIN_REGEXES = [r"http://192.168.0.***:****"]
 
 ROOT_URLCONF = 'settings.urls'
 
@@ -69,7 +70,7 @@ DATABASES = {
         'NAME': str(os.getenv('POSTGRES_DB')),
         'USER': str(os.getenv('POSTGRES_USER')),
         'PASSWORD': str(os.getenv('POSTGRES_PASSWORD')),
-        'HOST': str(os.getenv('POSTGRES_HOST')),  # или '127.0.0.1', если что
+        'HOST': str(os.getenv('POSTGRES_HOST')), 
         'PORT': '5432',
     }
 }

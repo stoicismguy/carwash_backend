@@ -1,11 +1,16 @@
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from .serializers import CarwashSerializer, RatingSerializer, BranchSerializer
 from .models import Carwash, Rating, Branch
+from services.models import Bodytype
+from services.serializers import BodytypeSerializer
 from settings.permissions import BusinessOnly
+
 
 
 class CarwashView(APIView):
@@ -18,8 +23,12 @@ class CarwashView(APIView):
         return super().get_permissions()
     
     def get(self, request):
-        # TODO: Добавить фильтрацию
         queryset = Carwash.objects.all()
+
+        if active := request.data.get('active', True):
+            if active: queryset = queryset.filter(is_active=active)
+            else: pass
+
         serializer = CarwashSerializer(queryset, many=True)
         return Response(serializer.data, status=200)
     
@@ -54,7 +63,15 @@ class CarwashDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
-    
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_carwash_bodytypes(request, pk):
+    carwash = get_object_or_404(Carwash, pk=pk)
+    bodytypes = Bodytype.objects.filter(
+        Q(branch_bodytypes__carwash=carwash) & Q(branch_bodytypes__is_active=True)
+    ).distinct().order_by('id')
+    return Response(BodytypeSerializer(bodytypes, many=True).data)
 
 class RatingsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -112,7 +129,7 @@ class RatingDetailView(APIView):
 
 
 class BranchView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BusinessOnly]
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -120,9 +137,17 @@ class BranchView(APIView):
         return super().get_permissions()
     
     def get(self, request, pk):
-        # TODO: Добавить фильтрацию
         carwash = get_object_or_404(Carwash, pk=pk)
+
         branches = Branch.objects.filter(carwash=carwash)
+
+        if active := request.data.get('active', True):
+            if active: branches = branches.filter(is_active=active)
+            else: pass
+
+        if bodytypes := request.data.get('bodytypes', None):
+            branches = branches.filter(bodytypes__in=bodytypes)
+
         serializer = BranchSerializer(branches, many=True)
         return Response(serializer.data, status=200)
     
@@ -138,12 +163,7 @@ class BranchView(APIView):
     
     
 class BranchDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return super().get_permissions()
+    permission_classes = [IsAuthenticated, BusinessOnly]
     
     def delete(self, request, pk):
         branch = get_object_or_404(Branch, pk=pk)
