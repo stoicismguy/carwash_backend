@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'users', 'carwash', 'services'
+    'users', 'carwash', 'services', 'booking'
 ]
 
 MIDDLEWARE = [
@@ -41,7 +41,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware'
 ]
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://192.168.0.171:5173']
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://192.168.0.171:5173', 'http://192.168.0.172:5173']
 #CORS_ALLOWED_ORIGIN_REGEXES = [r"http://192.168.0.***:****"]
 
 ROOT_URLCONF = 'settings.urls'
