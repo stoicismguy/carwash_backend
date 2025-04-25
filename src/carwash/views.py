@@ -16,7 +16,6 @@ from .paginations import Pagination
 
 
 class CarwashView(APIView):
-    # TODO: Пофиксить AllowAny для мертвого access токена
     permission_classes = [IsAuthenticated, BusinessOnly]
     pagination_class = Pagination
 
@@ -51,6 +50,11 @@ class CarwashDetailView(APIView):
             return [AllowAny()]
         return super().get_permissions()
     
+    def get(self, request, pk):
+        carwash = get_object_or_404(Carwash, pk=pk)
+        serializer = CarwashSerializer(carwash)
+        return Response(serializer.data, status=200)
+    
     def delete(self, request, pk):
         carwash = get_object_or_404(Carwash, pk=pk)
         if carwash.user != request.user:
@@ -58,13 +62,13 @@ class CarwashDetailView(APIView):
         carwash.delete()
         return Response({'message': 'Успешно удалено'}, status=200)
     
-    def put(self, request, pk):
+    def patch(self, request, pk):
         carwash = get_object_or_404(Carwash, pk=pk)
         if carwash.user != request.user:
             return Response({'error': 'У вас нет доступа для обновления'}, status=403)
-        serializer = CarwashSerializer(carwash, data=request.data)
+        serializer = CarwashSerializer(carwash, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            serializer.update(serializer.instance, serializer.validated_data)
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
 
@@ -190,4 +194,12 @@ class BranchDetailView(APIView):
             return Response({'error': 'У вас нет доступа для удаления'}, status=403)
         branch.delete()
         return Response({'message': 'Успешно удалено'}, status=200)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, BusinessOnly])
+def get_my_carwashes(request):
+    carwashes = Carwash.objects.filter(user=request.user).order_by('created_at')
+    return Response(CarwashSerializer(carwashes, many=True).data)
+
     

@@ -1,9 +1,6 @@
-from rest_framework.routers import DefaultRouter
 from django.urls import path
 from .views import *
 
-router = DefaultRouter()
-# router.register(r'', CarwashView)
 
 urlpatterns = [
     path('', CarwashView.as_view()),
@@ -17,6 +14,7 @@ urlpatterns = [
     path('branches/<int:pk>/', BranchDetailView.as_view(), name='D филиала'),
 
     path('ratings/<int:review_id>/', RatingDetailView.as_view(), name="D рейтинга"),
-]
 
-urlpatterns += router.urls
+    path('conf/carwashes/', get_my_carwashes, name="Получение автомоек пользователя"),
+
+]
