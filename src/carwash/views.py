@@ -187,6 +187,11 @@ class BranchView(APIView):
     
 class BranchDetailView(APIView):
     permission_classes = [IsAuthenticated, BusinessOnly]
+
+    def get(self, request, pk):
+        branch = get_object_or_404(Branch, pk=pk)
+        serializer = BranchSerializer(branch)
+        return Response(serializer.data, status=200)
     
     def delete(self, request, pk):
         branch = get_object_or_404(Branch, pk=pk)
@@ -201,5 +206,12 @@ class BranchDetailView(APIView):
 def get_my_carwashes(request):
     carwashes = Carwash.objects.filter(user=request.user).order_by('created_at')
     return Response(CarwashSerializer(carwashes, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, BusinessOnly])
+def get_all_bodytypes(request):
+    bodytypes = Bodytype.objects.all().order_by('id')
+    return Response(BodytypeSerializer(bodytypes, many=True).data)
 
     

@@ -23,6 +23,10 @@ class ServiceGroupSerializer(ModelSerializer):
 
     def get_services_count(self, obj):
         return Service.objects.filter(group=obj).count()
+    
+    def save(self, **kwargs):
+        kwargs['branch'] = self.context['branch']
+        return super().save(**kwargs)
 
     class Meta:
         model = ServiceGroup

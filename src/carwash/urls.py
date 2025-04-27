@@ -11,10 +11,10 @@ urlpatterns = [
     path('<int:pk>/ratings/', RatingsView.as_view(), name='Рейтинги автомойки'),
 
     path('branches/<int:pk>/ratings/', RatingBranchView.as_view(), name="CR рейтинги филиала"),
-    path('branches/<int:pk>/', BranchDetailView.as_view(), name='D филиала'),
+    path('branches/<int:pk>/', BranchDetailView.as_view(), name='RD филиала'),
 
     path('ratings/<int:review_id>/', RatingDetailView.as_view(), name="D рейтинга"),
 
     path('conf/carwashes/', get_my_carwashes, name="Получение автомоек пользователя"),
-
+    path('conf/bodytypes/', get_all_bodytypes, name="Получение филиалов пользователя"),
 ]

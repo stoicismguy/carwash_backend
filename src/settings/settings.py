@@ -116,8 +116,8 @@ AUTH_USER_MODEL = 'users.User'
 APPEND_SLASH=False
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=10),
-    'REFRESH_TOKEN_LIFETIME': timedelta(hours=24),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
 LANGUAGE_CODE = 'ru-RU'
