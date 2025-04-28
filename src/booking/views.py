@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum
 import datetime
-
+from django.utils import timezone
 from .serializers import BookingSerializer
 from .models import Booking
 from carwash.models import Branch
@@ -30,19 +30,18 @@ class BookingView(APIView):
         return Response(serializer.errors, status=400)
 
 
-@api_view(['GET'])
+
+@api_view(['POST'])
 @permission_classes([AllowAny])
 def get_available_hours(request, pk):
     date_str = request.data.get('date')
     service_ids = request.data.get('services')
-    print(service_ids)
     if not date_str or not service_ids:
         return Response({'error': 'Дата и услуги обязательны'}, status=400)
     services = Service.objects.filter(pk__in=service_ids)
     if services.count() != len(service_ids):
         return Response({'error': 'Не все выбранные услуги существуют'}, status=404)
     duration = services.aggregate(total=Sum('duration')).get('total')
-    print(duration, type(duration))
     branch = get_object_or_404(Branch, pk=pk)
     date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
     bookings = Booking.objects.filter(
@@ -52,32 +51,73 @@ def get_available_hours(request, pk):
         total_duration=Sum('services__duration')
     )
     available_hours = []
+
     if bookings.count() == 0:
-        available_hours.append({
-            'start': branch.opening_time,
-            'end': branch.closing_time
-        })
+        available_hours.extend(
+            _split_timings(
+                branch.opening_time,
+                branch.closing_time,
+                duration=duration
+            )
+        )
         return Response(available_hours, status=200)
 
-    if datetime.datetime.combine(date, branch.opening_time) + duration <= bookings[0].datetime:
-        available_hours.append({
-            'start': branch.opening_time,
-            'end': bookings[0].datetime
-    })
-    for i in range(len(bookings)-1):
+    for i in range(0, len(bookings)):
+        if i == 0:
+            available_hours.extend(
+                _split_timings(
+                    branch.opening_time,
+                    bookings.first().datetime.time(),
+                    duration=duration,
+                    date=date)
+            )
+            if len(bookings) != 1:
+                continue
+
+        if i == len(bookings) - 1:
+            available_hours.extend(
+                _split_timings(
+                    bookings.last().datetime + bookings.last().total_duration,
+                    branch.closing_time,
+                    duration=duration,
+                    date=date)
+            )
+            continue
+
         booking = bookings[i]
         next_booking = bookings[i+1]
-        if next_booking.datetime - booking.datetime + booking.total_duration >= duration:
-            available_hours.append({
-                'start': booking.datetime + booking.total_duration,
-                'end': next_booking.datetime
-            })
-    if branch.closing_time - duration >= bookings[-1].datetime:
-        available_hours.append({
-            'start': branch.closing_time,
-            'end': bookings[-1].datetime
-    })
+        available_hours.extend(
+            _split_timings(
+                booking.datetime.time(),
+                next_booking.datetime.time() + next_booking.total_duration,
+                duration
+            )
+        )
         
     return Response(available_hours, status=200)
+
+
+def _split_timings(start, end, duration, space=timezone.timedelta(minutes=15), date=datetime.datetime(2020, 1, 1)) -> list:
+    if (isinstance(start, datetime.time)):
+        start = datetime.datetime.combine(date, start)
+    if (isinstance(end, datetime.time)):
+        end = datetime.datetime.combine(date, end)
+
+    if (end - start < duration):
+        return []
+    
+    result = []
+    cs_start = start
+    finish = end - duration
+    print(start, end)
+
+    while cs_start + space <= finish:
+        result.append({
+            'start': cs_start.time(),
+            'end': (cs_start + space).time()
+        })
+        cs_start += space
+
+    return result
 
 

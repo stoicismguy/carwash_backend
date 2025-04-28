@@ -125,6 +125,7 @@ class RatingBranchView(APIView):
     
     def post(self, request, pk):
         # TODO: Добавить обновление рейтинга
+        
         branch = get_object_or_404(Branch, pk=pk)
         serializer = RatingSerializer(data=request.data, context={'user':request.user, 'branch':branch})
         if serializer.is_valid():
@@ -193,6 +194,27 @@ class BranchDetailView(APIView):
         serializer = BranchSerializer(branch)
         return Response(serializer.data, status=200)
     
+
+    def patch(self, request, pk):
+        branch = get_object_or_404(Branch, pk=pk)
+        if request.user != branch.carwash.user:
+            return Response({'error': 'У вас нет доступа для обновления'}, status=403)
+        serializer = BranchSerializer(branch, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.update(serializer.instance, serializer.validated_data)
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+    
+    def patch(self, request, pk):
+        branch = get_object_or_404(Branch, pk=pk)
+        if request.user != branch.carwash.user:
+            return Response({'error': 'У вас нет доступа для обновления'}, status=403)
+        serializer = BranchSerializer(branch, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.update(serializer.instance, serializer.validated_data)
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+    
     def delete(self, request, pk):
         branch = get_object_or_404(Branch, pk=pk)
         if request.user != branch.carwash.user:
@@ -206,6 +228,14 @@ class BranchDetailView(APIView):
 def get_my_carwashes(request):
     carwashes = Carwash.objects.filter(user=request.user).order_by('created_at')
     return Response(CarwashSerializer(carwashes, many=True).data)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, BusinessOnly])
+def get_my_carwash_branches(request, pk):
+    carwash = get_object_or_404(Carwash, pk=pk)
+    branches = Branch.objects.filter(carwash=carwash).order_by('created_at')
+    return Response(BranchSerializer(branches, many=True).data)
+
 
 
 @api_view(['GET'])

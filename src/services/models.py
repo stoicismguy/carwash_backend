@@ -26,7 +26,7 @@ class Service(models.Model):
     duration = models.TimeField()
 
     def __str__(self):
-        return f"{self.group.branch.carwash} {self.group.name} {self.name}"
+        return f"{self.id} {self.group.branch.carwash} {self.group.name} {self.name}"
     
     class Meta:
         verbose_name = 'Услуга'
