@@ -4,6 +4,7 @@ from settings.permissions import BusinessOnly
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 
 from carwash.models import Carwash, Branch
 from .models import Service, ServiceGroup
@@ -68,6 +69,21 @@ class ServiceGroupDetailView(APIView):
         service = get_object_or_404(Service, pk=pk)
         service.delete()
         return Response(status=204)
+    
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_info_services(request):
+    services = request.data.get('services')
+    if not services:
+        return Response({'error': 'Услуги не указаны'}, status=400)
+    services = Service.objects.filter(id__in=services)
+    values = services.aggregate(total_price=Sum('price'), total_duration=Sum('duration'))
+    return Response({
+        'services': ServiceSerializer(services, many=True).data,
+        'total_price': values['total_price'],
+        'total_duration': str(values['total_duration'])
+        }, status=200)
 
 
 

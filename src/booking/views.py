@@ -57,7 +57,8 @@ def get_available_hours(request, pk):
             _split_timings(
                 branch.opening_time,
                 branch.closing_time,
-                duration=duration
+                duration=duration,
+                date=date
             )
         )
         return Response(available_hours, status=200)
@@ -90,14 +91,15 @@ def get_available_hours(request, pk):
             _split_timings(
                 booking.datetime.time(),
                 next_booking.datetime.time() + next_booking.total_duration,
-                duration
+                duration=duration,
+                date=date
             )
         )
         
     return Response(available_hours, status=200)
 
 
-def _split_timings(start, end, duration, space=timezone.timedelta(minutes=15), date=datetime.datetime(2020, 1, 1)) -> list:
+def _split_timings(start, end, duration, space=timezone.timedelta(minutes=30), date=datetime.datetime(2020, 1, 1)) -> list:
     if (isinstance(start, datetime.time)):
         start = datetime.datetime.combine(date, start)
     if (isinstance(end, datetime.time)):
@@ -113,8 +115,9 @@ def _split_timings(start, end, duration, space=timezone.timedelta(minutes=15), d
 
     while cs_start + space <= finish:
         result.append({
-            'start': cs_start.time(),
-            'end': (cs_start + space).time()
+            'start': cs_start,
+            'end': (cs_start + space),
+            'display': cs_start.time()
         })
         cs_start += space
 
