@@ -77,12 +77,14 @@ def get_info_services(request):
     services = request.data.get('services')
     if not services:
         return Response({'error': 'Услуги не указаны'}, status=400)
-    services = Service.objects.filter(id__in=services)
+    services = Service.objects.filter(id__in=services).select_related('group').select_related('group__branch')
+    branch = services.first().group.branch
     values = services.aggregate(total_price=Sum('price'), total_duration=Sum('duration'))
     return Response({
         'services': ServiceSerializer(services, many=True).data,
         'total_price': values['total_price'],
-        'total_duration': str(values['total_duration'])
+        'total_duration': str(values['total_duration']),
+        'address': branch.address
         }, status=200)
 
 

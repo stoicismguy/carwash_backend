@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Avg, Count
 from geopy.distance import distance
 
 from .serializers import CarwashSerializer, RatingSerializer, BranchSerializer
@@ -98,7 +98,13 @@ class RatingsView(APIView):
 
 @api_view(['GET'])
 def carwash_search(request):
-    carwashes = Carwash.objects.filter(is_active=True).order_by('id')
+
+    order_by = request.GET.get('order_by', 'id')
+
+    carwashes = Carwash.objects.filter(is_active=True).prefetch_related('branches__received_ratings').annotate(
+        rating_count=Count('branches__received_ratings'),
+        rating_avg=Avg('branches__received_ratings__rating_value')
+    ).order_by(order_by)
 
     if name := request.GET.get('name', None):
         carwashes = carwashes.filter(name__icontains=name)
@@ -124,14 +130,43 @@ class RatingBranchView(APIView):
         return Response(serializer.data, status=200)
     
     def post(self, request, pk):
-        # TODO: Добавить обновление рейтинга
-        
         branch = get_object_or_404(Branch, pk=pk)
         serializer = RatingSerializer(data=request.data, context={'user':request.user, 'branch':branch})
+        
         if serializer.is_valid():
             serializer.save()
+            
+            # Пересчитываем рейтинг филиала
+            branch_ratings = branch.received_ratings.all()
+            if branch_ratings.exists():
+                avg_rating = branch_ratings.aggregate(Avg('rating_value'))['rating_value__avg']
+                branch.rating = round(avg_rating, 1)
+                branch.save(update_fields=['rating'])
+            
+            # Пересчитываем рейтинг автомойки
+            carwash = branch.carwash
+            branches = carwash.branches.all()
+            if branches.exists():
+                # Вычисляем средний рейтинг по всем филиалам
+                avg_carwash_rating = branches.aggregate(Avg('rating'))['rating__avg']
+                carwash.rating = round(avg_carwash_rating, 1) if avg_carwash_rating else 0.0
+                carwash.save(update_fields=['rating'])
+            
             return Response(serializer.data, status=201)
+        
         return Response(serializer.errors, status=400)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_carwash_rating(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    rating = Rating.objects.filter(user=request.user, branch=branch).first()
+    if rating:
+        serializer = RatingSerializer(rating)
+        return Response(serializer.data, status=200)
+    else:
+        return Response({'error': 'Рейтинг не найден'}, status=404)
     
 
 class RatingDetailView(APIView):

@@ -17,7 +17,17 @@ class BookingView(APIView):
 
     def get(self, request, pk):
         branch = get_object_or_404(Branch, pk=pk)
+        date_str = request.query_params.get('date')
+        
         bookings = Booking.objects.filter(branch=branch)
+        
+        if date_str:
+            try:
+                date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+                bookings = bookings.filter(datetime__date=date)
+            except ValueError:
+                return Response({'error': 'Неверный формат даты. Используйте YYYY-MM-DD'}, status=400)
+                
         return Response(BookingSerializer(bookings, many=True).data)
     
 
@@ -123,4 +133,74 @@ def _split_timings(start, end, duration, space=timezone.timedelta(minutes=30), d
 
     return result
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def make_booking(request, pk):
+    serivces = request.data.get('services')
+    date = request.data.get('datetime')
+
+    branch = get_object_or_404(Branch, pk=pk)
+
+    if not serivces or not date:
+        return Response({'error': 'Необходимо указать services и date'}, status=400)
+    
+    services = Service.objects.filter(pk__in=serivces)
+    if services.count() != len(serivces):
+        return Response({'error': 'Не все выбранные услуги существуют'}, status=404)
+    
+    duration = services.aggregate(total=Sum('duration')).get('total')
+    if not duration:
+        return Response({'error': 'Не удалось рассчитать продолжительность бронирования'}, status=400)
+    
+    booking_time = datetime.datetime.fromisoformat(date)
+    if booking_time < timezone.now():
+        return Response({'error': 'Невозможно забронировать прошедшее время'}, status=400)
+    
+    # booking_end = booking_time + datetime.timedelta(minutes=duration)
+    # conflicting_bookings = Booking.objects.filter(
+    #     branch=branch,
+    #     datetime__lte=booking_time,
+    #     datetime__gt=booking_time - datetime.timedelta(minutes=duration)
+    # ).exists() or Booking.objects.filter(
+    #     branch=branch,
+    #     datetime__lt=booking_end,
+    #     datetime__gte=booking_time
+    # ).exists()
+
+    # if conflicting_bookings.exists():
+    #     return Response({'error': 'На выбранное время уже есть бронирование'}, status=400)
+
+    serializer = BookingSerializer(data=request.data, context={
+            'branch': branch,
+            'user': request.user
+        })
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_history(request):
+    bookings = Booking.objects.filter(user=request.user).order_by('-datetime')
+    return Response(BookingSerializer(bookings, many=True).data, status=200)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_bookings_by_date(request, pk):
+    branch = get_object_or_404(Branch, pk=pk)
+    date_str = request.data.get('date')
+    
+    if not date_str:
+        return Response({'error': 'Дата обязательна'}, status=400)
+    
+    try:
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        bookings = Booking.objects.filter(branch=branch, datetime__date=date).prefetch_related('services').select_related('user')
+        return Response(BookingSerializer(bookings, many=True).data)
+    except ValueError:
+        return Response({'error': 'Неверный формат даты. Используйте YYYY-MM-DD'}, status=400)
 

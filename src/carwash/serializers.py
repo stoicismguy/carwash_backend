@@ -1,11 +1,16 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, SerializerMethodField
+
+from users.serializers import UserSerializer
 from .models import Carwash, Rating, Branch
 
 
 class CarwashSerializer(ModelSerializer):
+    branch_count = SerializerMethodField()
+
+    def get_branch_count(self, obj):
+        return obj.branches.count()
 
     def save(self, **kwargs):
-        
         kwargs['user'] = self.context['user']
         return super().save(**kwargs)
     
@@ -34,6 +39,7 @@ class BranchSerializer(ModelSerializer):
 
 
 class RatingSerializer(ModelSerializer):
+    user = UserSerializer(read_only=True)
     def save(self, **kwargs):
         kwargs['user'] = self.context['user']
         kwargs['branch'] = self.context['branch']

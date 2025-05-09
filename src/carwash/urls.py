@@ -13,6 +13,8 @@ urlpatterns = [
     path('branches/<int:pk>/ratings/', RatingBranchView.as_view(), name="CR рейтинги филиала"),
     path('branches/<int:pk>/', BranchDetailView.as_view(), name='RD филиала'),
 
+    path('branches/<int:pk>/rating-exists/', get_carwash_rating, name="Получение отзыва если он есть вообще"),
+
     path('ratings/<int:review_id>/', RatingDetailView.as_view(), name="D рейтинга"),
 
     path('conf/carwashes/', get_my_carwashes, name="Получение автомоек пользователя"),
