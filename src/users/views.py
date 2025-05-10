@@ -16,7 +16,7 @@ class UserViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return User.objects.filter(id=self.request.user.id)
+        return User.objects.filter(id=self.request.user.id).first()
     
 
 class UserView(APIView):
@@ -24,6 +24,18 @@ class UserView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+    
+    def patch(self, request):
+        
+        if phone := request.data.get('phone_number', None):
+            if request.user.phone_number == phone:
+                request.data.pop('phone_number')
+        print(request.data)
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
     
 @api_view(["POST",])
 @permission_classes([AllowAny,])

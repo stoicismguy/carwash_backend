@@ -203,4 +203,15 @@ def get_bookings_by_date(request, pk):
         return Response(BookingSerializer(bookings, many=True).data)
     except ValueError:
         return Response({'error': 'Неверный формат даты. Используйте YYYY-MM-DD'}, status=400)
+    
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_booking(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    if booking.user != request.user:
+        return Response({'error': 'Вы не можете удалить это бронирование'}, status=403)
+    if booking.datetime < timezone.now():
+        return Response({'error': 'Невозможно удалить бронирование, которое уже прошло'}, status=400)
+    booking.delete()
+    return Response({'message': 'Бронирование успешно удалено'}, status=200)

@@ -103,7 +103,7 @@ def carwash_search(request):
 
     carwashes = Carwash.objects.filter(is_active=True).prefetch_related('branches__received_ratings').annotate(
         rating_count=Count('branches__received_ratings'),
-        rating_avg=Avg('branches__received_ratings__rating_value')
+        # rating_avg=Avg('branches__received_ratings__rating_value')
     ).order_by(order_by)
 
     if name := request.GET.get('name', None):
