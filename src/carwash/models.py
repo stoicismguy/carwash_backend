@@ -31,7 +31,7 @@ class Carwash(models.Model):
     logo = models.URLField(blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    image = models.CharField(max_length=255, blank=True, null=True)
     # def update_rating(self):
     #     avg_rating = self.received_ratings.aggregate(models.Avg('rating_value'))['rating_value__avg']
     #     self.rating = round(avg_rating, 1) if avg_rating else 0.0
