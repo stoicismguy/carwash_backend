@@ -22,7 +22,7 @@ services:
         volumes:
             - .:/home/app
         ports:
-            - "127.0.0.1:8000:8000"
+            - "8000:8000"
         depends_on:
             - database
         networks:
@@ -31,7 +31,7 @@ services:
     frontend:
         container_name: frontend
         build:
-            context: ./carwash_frontend
+            context: ../carwash_frontend
             dockerfile: Dockerfile
         restart: always
         networks:
